@@ -1,0 +1,69 @@
+{
+    "name": "Simple Telegram Bot",
+    "nodes": [
+        {
+            "parameters": {
+                "updates": [
+                    "message"
+                ]
+            },
+            "id": "telegram-trigger-1",
+            "name": "Telegram Trigger",
+            "type": "n8n-nodes-base.telegramTrigger",
+            "typeVersion": 1.1,
+            "position": [
+                240,
+                300
+            ],
+            "webhookId": "telegram-bot-webhook",
+            "credentials": {
+                "telegramApi": {
+                    "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+                    "name": "Telegram Bot API"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "chatId": "={{ $json.message.chat.id }}",
+                "text": "=Anda mengirim: {{ $json.message.text }}\n\nSaya adalah bot sederhana. Saya akan echo pesan Anda."
+            },
+            "id": "telegram-send-1",
+            "name": "Telegram Send Message",
+            "type": "n8n-nodes-base.telegram",
+            "typeVersion": 1.2,
+            "position": [
+                460,
+                300
+            ],
+            "credentials": {
+                "telegramApi": {
+                    "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+                    "name": "Telegram Bot API"
+                }
+            }
+        }
+    ],
+    "connections": {
+        "Telegram Trigger": {
+            "main": [
+                [
+                    {
+                        "node": "Telegram Send Message",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "active": false,
+    "settings": {
+        "executionOrder": "v1"
+    },
+    "versionId": "1",
+    "meta": {
+        "instanceId": "n8n-local"
+    },
+    "tags": []
+}

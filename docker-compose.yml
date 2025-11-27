@@ -1,0 +1,29 @@
+version: "3.8"
+
+services:
+  n8n:
+    image: n8nio/n8n
+    container_name: n8n
+    restart: always
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_HOST=schemeless-charli-unenlightenedly.ngrok-free.dev
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=https
+      - WEBHOOK_URL=https://schemeless-charli-unenlightenedly.ngrok-free.dev/
+      - GENERIC_TIMEZONE=Asia/Jakarta
+    volumes:
+      - ./n8n_data:/home/node/.n8n
+
+  ngrok:
+    image: ngrok/ngrok:latest
+    container_name: ngrok
+    restart: always
+    command:
+      - "http"
+      - "n8n:5678"
+    environment:
+      - NGROK_AUTHTOKEN=35WaZY69NmyEueJSXlSufrbA4mi_qZstpcNS6iyzUEnRTPEj
+    ports:
+      - "4040:4040"   # dashboard ngrok
