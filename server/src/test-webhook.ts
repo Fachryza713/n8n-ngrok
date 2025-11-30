@@ -1,6 +1,6 @@
 import fetch from 'node-fetch';
 
-const webhookUrl = 'https://schemeless-charli-unenlightenedly.ngrok-free.dev/webhook-test/bc3934df-8d10-48df-9960-f0db1e806328';
+const webhookUrl = 'https://schemeless-charli-unenlightenedly.ngrok-free.dev/webhook/bc3934df-8d10-48df-9960-f0db1e806328';
 
 async function testWebhook() {
     console.log('Testing webhook:', webhookUrl);

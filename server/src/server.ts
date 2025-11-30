@@ -30,7 +30,7 @@ app.post('/api/chat', upload.single('file'), async (req: Request, res: Response)
         const file = req.file;
 
         // Default n8n webhook URL
-        const webhookUrl = apiUrl || 'https://schemeless-charli-unenlightenedly.ngrok-free.dev/webhook-test/bc3934df-8d10-48df-9960-f0db1e806328';
+        const webhookUrl = apiUrl || 'https://schemeless-charli-unenlightenedly.ngrok-free.dev/webhook/bc3934df-8d10-48df-9960-f0db1e806328';
 
         console.log('📨 Incoming request:', { message, hasFile: !!file });
 
@@ -121,5 +121,5 @@ app.post('/api/chat', upload.single('file'), async (req: Request, res: Response)
 app.listen(PORT, () => {
     console.log(`🚀 Server is running on http://localhost:${PORT}`);
     console.log(`📡 Chat endpoint: http://localhost:${PORT}/api/chat`);
-    console.log(`🔗 n8n webhook: https://schemeless-charli-unenlightenedly.ngrok-free.dev/webhook-test/bc3934df-8d10-48df-9960-f0db1e806328`);
+    console.log(`🔗 n8n webhook: https://schemeless-charli-unenlightenedly.ngrok-free.dev/webhook/bc3934df-8d10-48df-9960-f0db1e806328`);
 });

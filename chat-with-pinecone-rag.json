@@ -1,0 +1,230 @@
+{
+    "name": "Chat with Pinecone RAG",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "bc3934df-8d10-48df-9960-f0db1e806328",
+                "responseMode": "responseNode",
+                "options": {}
+            },
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 2.1,
+            "position": [
+                320,
+                400
+            ],
+            "id": "webhook-trigger",
+            "name": "Webhook",
+            "webhookId": "bc3934df-8d10-48df-9960-f0db1e806328"
+        },
+        {
+            "parameters": {
+                "text": "={{ $json.body.message }}",
+                "options": {
+                    "systemMessage": "You are a helpful AI assistant with access to a knowledge base. When answering questions, use the information from the knowledge base when relevant. Always provide accurate and helpful responses."
+                }
+            },
+            "id": "ai-agent",
+            "name": "AI Agent",
+            "type": "@n8n/n8n-nodes-langchain.agent",
+            "position": [
+                720,
+                400
+            ],
+            "typeVersion": 1.1
+        },
+        {
+            "parameters": {
+                "options": {
+                    "frequencyPenalty": 0.2,
+                    "temperature": 0.7
+                }
+            },
+            "id": "openai-chat-model",
+            "name": "OpenAI Chat Model",
+            "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+            "position": [
+                720,
+                600
+            ],
+            "typeVersion": 1,
+            "credentials": {
+                "openAiApi": {
+                    "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+                    "name": "OpenAi account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "sessionKey": "={{ $json.body.chatId }}",
+                "contextWindowLength": 10
+            },
+            "id": "window-buffer-memory",
+            "name": "Window Buffer Memory",
+            "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+            "position": [
+                920,
+                600
+            ],
+            "typeVersion": 1
+        },
+        {
+            "parameters": {
+                "name": "knowledge_base",
+                "description": "Use this tool to search the knowledge base for relevant information to answer user questions."
+            },
+            "id": "vector-store-tool",
+            "name": "Vector Store Tool",
+            "type": "@n8n/n8n-nodes-langchain.toolVectorStore",
+            "position": [
+                920,
+                400
+            ],
+            "typeVersion": 1
+        },
+        {
+            "parameters": {
+                "mode": "load",
+                "pineconeIndex": {
+                    "__rl": true,
+                    "mode": "list",
+                    "value": ""
+                },
+                "topK": 5
+            },
+            "id": "pinecone-vector-store",
+            "name": "Pinecone Vector Store",
+            "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+            "position": [
+                1120,
+                400
+            ],
+            "typeVersion": 1,
+            "credentials": {
+                "pineconeApi": {
+                    "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+                    "name": "Pinecone account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "model": "text-embedding-3-small"
+            },
+            "id": "embeddings-openai",
+            "name": "Embeddings OpenAI",
+            "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+            "position": [
+                1120,
+                600
+            ],
+            "typeVersion": 1,
+            "credentials": {
+                "openAiApi": {
+                    "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+                    "name": "OpenAi account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "respondWith": "text",
+                "responseBody": "={{ $json.output }}",
+                "options": {}
+            },
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1.4,
+            "position": [
+                920,
+                400
+            ],
+            "id": "respond-to-webhook",
+            "name": "Respond to Webhook"
+        }
+    ],
+    "connections": {
+        "Webhook": {
+            "main": [
+                [
+                    {
+                        "node": "AI Agent",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "AI Agent": {
+            "main": [
+                [
+                    {
+                        "node": "Respond to Webhook",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "OpenAI Chat Model": {
+            "ai_languageModel": [
+                [
+                    {
+                        "node": "AI Agent",
+                        "type": "ai_languageModel",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Window Buffer Memory": {
+            "ai_memory": [
+                [
+                    {
+                        "node": "AI Agent",
+                        "type": "ai_memory",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Vector Store Tool": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "AI Agent",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Pinecone Vector Store": {
+            "ai_vectorStore": [
+                [
+                    {
+                        "node": "Vector Store Tool",
+                        "type": "ai_vectorStore",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Embeddings OpenAI": {
+            "ai_embedding": [
+                [
+                    {
+                        "node": "Pinecone Vector Store",
+                        "type": "ai_embedding",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "active": false,
+    "settings": {
+        "executionOrder": "v1"
+    }
+}

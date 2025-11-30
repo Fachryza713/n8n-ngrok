@@ -1,0 +1,167 @@
+{
+    "name": "Google Drive to Pinecone Ingestion",
+    "nodes": [
+        {
+            "parameters": {},
+            "id": "manual-trigger",
+            "name": "When clicking \"Execute Workflow\"",
+            "type": "n8n-nodes-base.manualTrigger",
+            "typeVersion": 1,
+            "position": [
+                460,
+                340
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "download",
+                "fileId": {
+                    "__rl": true,
+                    "mode": "list",
+                    "value": ""
+                }
+            },
+            "id": "google-drive-download",
+            "name": "Google Drive",
+            "type": "n8n-nodes-base.googleDrive",
+            "typeVersion": 3,
+            "position": [
+                680,
+                340
+            ],
+            "credentials": {
+                "googleDriveOAuth2Api": {
+                    "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+                    "name": "Google Drive account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "options": {}
+            },
+            "id": "text-loader",
+            "name": "Default Data Loader",
+            "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+            "typeVersion": 1,
+            "position": [
+                900,
+                340
+            ]
+        },
+        {
+            "parameters": {
+                "chunkSize": 1000,
+                "chunkOverlap": 200
+            },
+            "id": "text-splitter",
+            "name": "Recursive Character Text Splitter",
+            "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacter",
+            "typeVersion": 1,
+            "position": [
+                900,
+                540
+            ]
+        },
+        {
+            "parameters": {
+                "mode": "insert",
+                "pineconeIndex": {
+                    "__rl": true,
+                    "mode": "list",
+                    "value": ""
+                }
+            },
+            "id": "pinecone-insert",
+            "name": "Pinecone Vector Store",
+            "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+            "typeVersion": 1,
+            "position": [
+                1240,
+                340
+            ],
+            "credentials": {
+                "pineconeApi": {
+                    "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+                    "name": "Pinecone account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "model": "text-embedding-3-small"
+            },
+            "id": "openai-embeddings",
+            "name": "Embeddings OpenAI",
+            "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+            "typeVersion": 1,
+            "position": [
+                1240,
+                560
+            ],
+            "credentials": {
+                "openAiApi": {
+                    "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+                    "name": "OpenAi account"
+                }
+            }
+        }
+    ],
+    "connections": {
+        "When clicking \"Execute Workflow\"": {
+            "main": [
+                [
+                    {
+                        "node": "Google Drive",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Google Drive": {
+            "main": [
+                [
+                    {
+                        "node": "Default Data Loader",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Default Data Loader": {
+            "main": [
+                [
+                    {
+                        "node": "Pinecone Vector Store",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Recursive Character Text Splitter": {
+            "ai_textSplitter": [
+                [
+                    {
+                        "node": "Default Data Loader",
+                        "type": "ai_textSplitter",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Embeddings OpenAI": {
+            "ai_embedding": [
+                [
+                    {
+                        "node": "Pinecone Vector Store",
+                        "type": "ai_embedding",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}

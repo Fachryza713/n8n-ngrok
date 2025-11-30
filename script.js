@@ -1,6 +1,6 @@
 // Configuration
 let config = {
-    apiUrl: 'https://schemeless-charli-unenlightenedly.ngrok-free.dev/webhook-test/f7b24e5c-6669-4601-bc0b-30f3d4ca7c00/webhook',
+    apiUrl: 'https://schemeless-charli-unenlightenedly.ngrok-free.dev/webhook/f7b24e5c-6669-4601-bc0b-30f3d4ca7c00/webhook',
     temperature: 0.7
 };
 

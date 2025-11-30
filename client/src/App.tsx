@@ -16,7 +16,7 @@ function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isNightMode, setIsNightMode] = useState(false);
   const [config, setConfig] = useState<Config>({
-    apiUrl: 'https://schemeless-charli-unenlightenedly.ngrok-free.dev/webhook-test/bc3934df-8d10-48df-9960-f0db1e806328',
+    apiUrl: 'https://schemeless-charli-unenlightenedly.ngrok-free.dev/webhook/bc3934df-8d10-48df-9960-f0db1e806328',
     temperature: 0.7,
   });
 
