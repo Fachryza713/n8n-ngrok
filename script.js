@@ -1,7 +1,7 @@
 // Configuration
 let config = {
-    apiUrl: 'https://schemeless-charli-unenlightenedly.ngrok-free.dev/webhook/f7b24e5c-6669-4601-bc0b-30f3d4ca7c00/webhook',
-    temperature: 0.7
+    apiUrl: 'https://schemeless-charli-unenlightenedly.ngrok-free.dev/webhook/bc3934df-8d10-48df-9960-f0db1e806328',
+    temperature: 1
 };
 
 // State
@@ -232,10 +232,24 @@ async function sendMessage() {
         }
 
         // Send to API
-        const response = await fetch(config.apiUrl, {
+        let options = {
             method: 'POST',
-            body: formData
-        });
+        };
+
+        if (currentFile) {
+            options.body = formData;
+        } else {
+            options.headers = {
+                'Content-Type': 'application/json'
+            };
+            options.body = JSON.stringify({
+                message: message,
+                temperature: config.temperature,
+                history: conversationHistory
+            });
+        }
+
+        const response = await fetch(config.apiUrl, options);
 
         if (!response.ok) {
             throw new Error('Network response was not ok');

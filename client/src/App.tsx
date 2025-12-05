@@ -18,6 +18,7 @@ function App() {
   const [config, setConfig] = useState<Config>({
     apiUrl: 'https://schemeless-charli-unenlightenedly.ngrok-free.dev/webhook/bc3934df-8d10-48df-9960-f0db1e806328',
     temperature: 0.7,
+    userName: 'User',
   });
 
   // Load settings from localStorage
@@ -25,12 +26,16 @@ function App() {
     const savedApiUrl = localStorage.getItem('apiUrl');
     const savedTemp = localStorage.getItem('temperature');
     const savedNightMode = localStorage.getItem('nightMode');
+    const savedUserName = localStorage.getItem('userName');
 
     if (savedApiUrl) {
       setConfig(prev => ({ ...prev, apiUrl: savedApiUrl }));
     }
     if (savedTemp) {
       setConfig(prev => ({ ...prev, temperature: parseFloat(savedTemp) }));
+    }
+    if (savedUserName) {
+      setConfig(prev => ({ ...prev, userName: savedUserName }));
     }
     if (savedNightMode === 'true') {
       setIsNightMode(true);
@@ -56,6 +61,7 @@ function App() {
     setConfig(newConfig);
     localStorage.setItem('apiUrl', newConfig.apiUrl);
     localStorage.setItem('temperature', newConfig.temperature.toString());
+    localStorage.setItem('userName', newConfig.userName);
     showNotification('Pengaturan berhasil disimpan!');
   };
 
@@ -110,6 +116,7 @@ function App() {
       formData.append('temperature', config.temperature.toString());
       formData.append('history', JSON.stringify(conversationHistory));
       formData.append('apiUrl', config.apiUrl);
+      formData.append('userName', config.userName);
 
       if (file) {
         formData.append('file', file);

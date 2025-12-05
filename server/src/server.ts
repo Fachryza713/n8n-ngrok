@@ -26,13 +26,13 @@ app.get('/health', (req: Request, res: Response) => {
 // Chat endpoint
 app.post('/api/chat', upload.single('file'), async (req: Request, res: Response) => {
     try {
-        const { message, temperature, history, apiUrl } = req.body;
+        const { message, temperature, history, apiUrl, userName } = req.body;
         const file = req.file;
 
         // Default n8n webhook URL
         const webhookUrl = apiUrl || 'https://schemeless-charli-unenlightenedly.ngrok-free.dev/webhook/bc3934df-8d10-48df-9960-f0db1e806328';
 
-        console.log('📨 Incoming request:', { message, hasFile: !!file });
+        console.log('📨 Incoming request:', { message, hasFile: !!file, userName });
 
         // Prepare request body for n8n webhook
         // Format to match what n8n webhook expects
@@ -41,8 +41,8 @@ app.post('/api/chat', upload.single('file'), async (req: Request, res: Response)
             chatId: 'web-app', // Identifier for web app
             from: {
                 id: 'web-user',
-                first_name: 'Web User',
-                username: 'web_user'
+                first_name: userName || 'User',
+                username: (userName || 'user').toLowerCase().replace(/\s+/g, '_')
             }
         };
 

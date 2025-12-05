@@ -8,6 +8,7 @@ export interface Message {
 export interface Config {
     apiUrl: string;
     temperature: number;
+    userName: string;
 }
 
 export interface ConversationMessage {

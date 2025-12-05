@@ -4,14 +4,16 @@ import type { SettingsModalProps } from '../types/types';
 const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, config, onSave }) => {
     const [apiUrl, setApiUrl] = useState(config.apiUrl);
     const [temperature, setTemperature] = useState(config.temperature);
+    const [userName, setUserName] = useState(config.userName);
 
     useEffect(() => {
         setApiUrl(config.apiUrl);
         setTemperature(config.temperature);
+        setUserName(config.userName);
     }, [config]);
 
     const handleSave = () => {
-        onSave({ apiUrl, temperature });
+        onSave({ apiUrl, temperature, userName });
         onClose();
     };
 
@@ -36,6 +38,16 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, config, 
                     </button>
                 </div>
                 <div className="modal-body">
+                    <div className="setting-item">
+                        <label htmlFor="userName">Nama Anda</label>
+                        <input
+                            type="text"
+                            id="userName"
+                            placeholder="Masukkan nama Anda"
+                            value={userName}
+                            onChange={(e) => setUserName(e.target.value)}
+                        />
+                    </div>
                     <div className="setting-item">
                         <label htmlFor="apiUrl">API URL (n8n Webhook)</label>
                         <input
@@ -67,3 +79,4 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, config, 
 };
 
 export default SettingsModal;
+
