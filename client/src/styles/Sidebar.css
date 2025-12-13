@@ -110,3 +110,29 @@
 /* Night Mode adjustments if keeping in separate file, 
    but since App.css handles variables, this should just work 
    if we use the vars. */
+
+.sign-out-btn {
+    width: 100%;
+    padding: 10px 12px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.sign-out-btn:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
+}
+
+.sign-out-btn svg {
+    width: 18px;
+    height: 18px;
+}

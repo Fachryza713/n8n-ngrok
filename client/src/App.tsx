@@ -5,6 +5,8 @@ import ChatInput from './components/ChatInput';
 import TypingIndicator from './components/TypingIndicator';
 import SettingsModal from './components/SettingsModal';
 import Sidebar from './components/Sidebar';
+import { Login } from './components/Login';
+import { supabase } from './supabase';
 import type { Message, Config, ConversationMessage, ChatResponse } from './types/types';
 import './styles/App.css';
 
@@ -27,6 +29,40 @@ function App() {
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [isLoadingSessions, setIsLoadingSessions] = useState(false);
 
+  // Auth State
+  const [user, setUser] = useState<any>(null);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
+
+  // Load user session
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        setConfig(prev => ({
+          ...prev,
+          userName: session.user.user_metadata.full_name || session.user.email || 'User'
+        }));
+        fetchSessions(session.user.id);
+      }
+      setIsAuthLoading(false);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        setConfig(prev => ({
+          ...prev,
+          userName: session.user.user_metadata.full_name || session.user.email || 'User'
+        }));
+        fetchSessions(session.user.id);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+
+
   // Load settings from localStorage
   useEffect(() => {
     const savedApiUrl = localStorage.getItem('apiUrl');
@@ -47,14 +83,13 @@ function App() {
       setIsNightMode(true);
     }
 
-    // Load sessions on mount
-    fetchSessions();
+    // Load sessions on mount is handled by auth effect now
   }, []);
 
-  const fetchSessions = async () => {
+  const fetchSessions = async (userId: string) => {
     setIsLoadingSessions(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/sessions`);
+      const response = await fetch(`${API_BASE_URL}/api/sessions?userId=${userId}`);
       if (response.ok) {
         const data = await response.json();
         setSessions(data);
@@ -193,6 +228,9 @@ function App() {
       formData.append('apiUrl', config.apiUrl);
       formData.append('userName', config.userName);
       formData.append('sessionId', activeSessionId); // Pass session ID
+      if (user?.id) {
+        formData.append('userId', user.id);
+      }
 
       if (file) {
         formData.append('file', file);
@@ -225,8 +263,9 @@ function App() {
       setConversationHistory(prev => [...prev, aiConversation]);
 
       // Refresh session list to show new chat title
-      if (!currentSessionId) {
-        fetchSessions();
+      // Refresh session list to show new chat title
+      if (!currentSessionId && user?.id) {
+        fetchSessions(user.id);
       }
 
     } catch (error) {
@@ -250,6 +289,21 @@ function App() {
     }
   };
 
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    setMessages([]);
+    setConversationHistory([]);
+    setCurrentSessionId(null);
+  };
+
+  if (isAuthLoading) {
+    return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#1a1a1a', color: 'white' }}>Loading...</div>;
+  }
+
+  if (!user) {
+    return <Login />;
+  }
+
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
       <Sidebar
@@ -257,6 +311,7 @@ function App() {
         currentSessionId={currentSessionId}
         onSessionSelect={handleSessionSelect}
         onNewChat={handleNewChat}
+        onSignOut={handleSignOut}
         isLoading={isLoadingSessions}
       />
       <div className="container" style={{ flex: 1, height: '100%', maxWidth: 'none', margin: 0 }}>

@@ -24,12 +24,19 @@ app.get('/health', (req: Request, res: Response) => {
     res.json({ status: 'ok', message: 'Server is running' });
 });
 
-// Get all sessions
+// Get all sessions for a specific user
 app.get('/api/sessions', async (req: Request, res: Response) => {
     try {
+        const { userId } = req.query;
+
+        if (!userId || typeof userId !== 'string') {
+            return res.json([]);
+        }
+
         const { data, error } = await supabase
             .from('sessions')
             .select('*')
+            .eq('user_id', userId)
             .order('created_at', { ascending: false });
 
         if (error) throw error;
@@ -72,13 +79,13 @@ app.get('/api/sessions/:id', async (req: Request, res: Response) => {
 // Chat endpoint
 app.post('/api/chat', upload.single('file'), async (req: Request, res: Response) => {
     try {
-        const { message, temperature, history, apiUrl, userName, sessionId } = req.body;
+        const { message, temperature, history, apiUrl, userName, sessionId, userId } = req.body;
         const file = req.file;
 
         // Default n8n webhook URL
         const webhookUrl = apiUrl || 'https://schemeless-charli-unenlightenedly.ngrok-free.dev/webhook/bc3934df-8d10-48df-9960-f0db1e806328';
 
-        console.log('📨 Incoming request:', { message, hasFile: !!file, userName, sessionId });
+        console.log('📨 Incoming request:', { message, hasFile: !!file, userName, sessionId, userId });
 
         // If new session (or first message of session), save to Supabase 'sessions' table
         if (sessionId && message) {
@@ -96,14 +103,14 @@ app.post('/api/chat', upload.single('file'), async (req: Request, res: Response)
                     .insert({
                         id: sessionId,
                         title: message.substring(0, 50) + (message.length > 50 ? '...' : ''), // Use first message as title
-                        user_id: userName || 'user'
+                        user_id: userId || 'anonymous' // Use actual User ID
                     });
 
                 if (insertError) {
                     console.error('⚠️ Error creating session:', insertError);
                     // Don't block chat flow, just log it
                 } else {
-                    console.log('✅ New session created:', sessionId);
+                    console.log('✅ New session created:', sessionId, 'for user:', userId);
                 }
             }
         }
