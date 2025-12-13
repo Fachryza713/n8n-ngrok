@@ -4,6 +4,7 @@ import ChatMessages from './components/ChatMessages';
 import ChatInput from './components/ChatInput';
 import TypingIndicator from './components/TypingIndicator';
 import SettingsModal from './components/SettingsModal';
+import Sidebar from './components/Sidebar';
 import type { Message, Config, ConversationMessage, ChatResponse } from './types/types';
 import './styles/App.css';
 
@@ -20,6 +21,11 @@ function App() {
     temperature: 0.7,
     userName: 'User',
   });
+
+  // Session State
+  const [sessions, setSessions] = useState<any[]>([]);
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
+  const [isLoadingSessions, setIsLoadingSessions] = useState(false);
 
   // Load settings from localStorage
   useEffect(() => {
@@ -40,7 +46,25 @@ function App() {
     if (savedNightMode === 'true') {
       setIsNightMode(true);
     }
+
+    // Load sessions on mount
+    fetchSessions();
   }, []);
+
+  const fetchSessions = async () => {
+    setIsLoadingSessions(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/sessions`);
+      if (response.ok) {
+        const data = await response.json();
+        setSessions(data);
+      }
+    } catch (error) {
+      console.error('Failed to load sessions:', error);
+    } finally {
+      setIsLoadingSessions(false);
+    }
+  };
 
   // Apply night mode class to body
   useEffect(() => {
@@ -88,8 +112,59 @@ function App() {
     }, 3000);
   };
 
+  const handleNewChat = () => {
+    setCurrentSessionId(null);
+    setMessages([]);
+    setConversationHistory([]);
+  };
+
+  const handleSessionSelect = async (sessionId: string) => {
+    if (sessionId === currentSessionId) return;
+
+    setCurrentSessionId(sessionId);
+    setMessages([]); // Clear while loading
+    setIsLoadingSessions(true);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/sessions/${sessionId}`);
+      if (response.ok) {
+        const data = await response.json();
+        // Transform stored messages if needed to match UI Message type
+        // Assuming data comes in a format we can map or use directly
+        // If data structure is complex, might need mapping logic here
+        if (Array.isArray(data)) {
+          // Basic mapping - adjust based on actual DB structure
+          const mappedMessages: Message[] = data.map((msg: any) => ({
+            id: msg.id || Date.now().toString(),
+            text: typeof msg.message === 'string' ? msg.message : JSON.stringify(msg.message),
+            isUser: msg.role === 'human' || msg.type === 'human', // Adjust based on LangChain schema
+            timestamp: new Date(msg.created_at || Date.now()),
+          }));
+          setMessages(mappedMessages);
+
+          // For now, if we don't know the schema, we might not show old messages correctly
+          // unless we verify the structure.
+          // Placeholder:
+          // showNotification('History loaded (schema adaptation required)');
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load session messages:', error);
+      showNotification('Gagal memuat riwayat chat');
+    } finally {
+      setIsLoadingSessions(false);
+    }
+  };
+
   const handleSendMessage = async (messageText: string, file: File | null) => {
     if (!messageText.trim() && !file) return;
+
+    // Generate Session ID if new
+    let activeSessionId = currentSessionId;
+    if (!activeSessionId) {
+      activeSessionId = crypto.randomUUID();
+      setCurrentSessionId(activeSessionId);
+    }
 
     // Add user message
     if (messageText) {
@@ -117,6 +192,7 @@ function App() {
       formData.append('history', JSON.stringify(conversationHistory));
       formData.append('apiUrl', config.apiUrl);
       formData.append('userName', config.userName);
+      formData.append('sessionId', activeSessionId); // Pass session ID
 
       if (file) {
         formData.append('file', file);
@@ -148,6 +224,11 @@ function App() {
       };
       setConversationHistory(prev => [...prev, aiConversation]);
 
+      // Refresh session list to show new chat title
+      if (!currentSessionId) {
+        fetchSessions();
+      }
+
     } catch (error) {
       console.error('Error:', error);
       const errorMessage: Message = {
@@ -170,21 +251,30 @@ function App() {
   };
 
   return (
-    <div className="container">
-      <Header
-        onSettingsClick={() => setIsSettingsOpen(true)}
-        onNightModeToggle={handleNightModeToggle}
-        isNightMode={isNightMode}
+    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
+      <Sidebar
+        sessions={sessions}
+        currentSessionId={currentSessionId}
+        onSessionSelect={handleSessionSelect}
+        onNewChat={handleNewChat}
+        isLoading={isLoadingSessions}
       />
-      <ChatMessages messages={messages} />
-      <TypingIndicator show={isTyping} />
-      <ChatInput onSendMessage={handleSendMessage} disabled={isTyping} />
-      <SettingsModal
-        isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
-        config={config}
-        onSave={handleSaveSettings}
-      />
+      <div className="container" style={{ flex: 1, height: '100%', maxWidth: 'none', margin: 0 }}>
+        <Header
+          onSettingsClick={() => setIsSettingsOpen(true)}
+          onNightModeToggle={handleNightModeToggle}
+          isNightMode={isNightMode}
+        />
+        <ChatMessages messages={messages} />
+        <TypingIndicator show={isTyping} />
+        <ChatInput onSendMessage={handleSendMessage} disabled={isTyping} />
+        <SettingsModal
+          isOpen={isSettingsOpen}
+          onClose={() => setIsSettingsOpen(false)}
+          config={config}
+          onSave={handleSaveSettings}
+        />
+      </div>
     </div>
   );
 }

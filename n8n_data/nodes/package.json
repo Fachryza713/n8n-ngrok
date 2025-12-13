@@ -1,5 +1,7 @@
 {
   "name": "installed-nodes",
   "private": true,
-  "dependencies": {}
+  "dependencies": {
+    "@searchapi/n8n-nodes-searchapi": "2.0.4"
+  }
 }
