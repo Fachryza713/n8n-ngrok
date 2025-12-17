@@ -38,9 +38,11 @@ function App() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       if (session?.user) {
+        // Prioritize localStorage name if exists, otherwise use session name
+        const savedUserName = localStorage.getItem('userName');
         setConfig(prev => ({
           ...prev,
-          userName: session.user.user_metadata.full_name || session.user.email || 'User'
+          userName: savedUserName || session.user.user_metadata.full_name || session.user.email || 'User'
         }));
         fetchSessions(session.user.id);
       }
@@ -50,9 +52,11 @@ function App() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       if (session?.user) {
+        // Prioritize localStorage name if exists, otherwise use session name
+        const savedUserName = localStorage.getItem('userName');
         setConfig(prev => ({
           ...prev,
-          userName: session.user.user_metadata.full_name || session.user.email || 'User'
+          userName: savedUserName || session.user.user_metadata.full_name || session.user.email || 'User'
         }));
         fetchSessions(session.user.id);
       }
@@ -174,6 +178,7 @@ function App() {
             text: typeof msg.message === 'string' ? msg.message : JSON.stringify(msg.message),
             isUser: msg.role === 'human' || msg.type === 'human', // Adjust based on LangChain schema
             timestamp: new Date(msg.created_at || Date.now()),
+            imageUrl: msg.image_url, // Map URL
           }));
           setMessages(mappedMessages);
 
@@ -191,6 +196,24 @@ function App() {
     }
   };
 
+  const handleDeleteSession = async (sessionId: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/sessions/${sessionId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        setSessions(prev => prev.filter(s => s.id !== sessionId));
+        if (currentSessionId === sessionId) {
+          handleNewChat();
+        }
+      }
+    } catch (error) {
+      console.error('Failed to delete session:', error);
+      showNotification('Gagal menghapus chat');
+    }
+  };
+
   const handleSendMessage = async (messageText: string, file: File | null) => {
     if (!messageText.trim() && !file) return;
 
@@ -202,12 +225,13 @@ function App() {
     }
 
     // Add user message
-    if (messageText) {
+    if (messageText || file) { // Allow empty text if file exists
       const userMessage: Message = {
         id: Date.now().toString(),
         text: messageText,
         isUser: true,
         timestamp: new Date(),
+        imageUrl: file ? URL.createObjectURL(file) : undefined, // Preview image
       };
       setMessages(prev => [...prev, userMessage]);
 
@@ -312,6 +336,7 @@ function App() {
         onSessionSelect={handleSessionSelect}
         onNewChat={handleNewChat}
         onSignOut={handleSignOut}
+        onDeleteSession={handleDeleteSession}
         isLoading={isLoadingSessions}
       />
       <div className="container" style={{ flex: 1, height: '100%', maxWidth: 'none', margin: 0 }}>

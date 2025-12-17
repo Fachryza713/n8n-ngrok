@@ -1,4 +1,6 @@
 /* Sidebar Styles */
+@import './SidebarDelete.css';
+
 .sidebar {
     width: 260px;
     background: var(--bg-secondary);

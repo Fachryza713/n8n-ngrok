@@ -42,6 +42,16 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({ messages }) => {
                             )}
                         </div>
                         <div className="message-content">
+                            {message.imageUrl && (
+                                <div className="message-image">
+                                    <img
+                                        src={message.imageUrl}
+                                        alt="Uploaded content"
+                                        style={{ maxWidth: '100%', borderRadius: '8px', marginBottom: '8px', cursor: 'pointer' }}
+                                        onClick={() => window.open(message.imageUrl, '_blank')}
+                                    />
+                                </div>
+                            )}
                             <div className="message-text">{message.text}</div>
                             <span className="message-time">{formatTime(message.timestamp)}</span>
                         </div>
