@@ -29,3 +29,4 @@ yarn-error.log*
 # IDEs
 .vscode/
 .idea/
+n8n_data/
