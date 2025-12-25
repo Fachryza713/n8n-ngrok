@@ -1,0 +1,9 @@
+tunnel: 9f2fd331-d36c-434b-a0f1-f4253a744fd8
+credentials-file: C:\Users\Eja\.cloudflared\9f2fd331-d36c-434b-a0f1-f4253a744fd8.json
+
+ingress:
+  - hostname: n8n.ryuma-ai.cloud
+    service: http://localhost:5678
+  - hostname: webhook.ryuma-ai.cloud
+    service: http://localhost:5678
+  - service: http_status:404
