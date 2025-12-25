@@ -34,6 +34,7 @@ export interface HeaderProps {
     onSettingsClick: () => void;
     onNightModeToggle: () => void;
     isNightMode: boolean;
+    onMenuClick?: () => void; // New prop for mobile sidebar
 }
 
 export interface ChatMessagesProps {

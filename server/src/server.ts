@@ -20,6 +20,14 @@ const upload = multer({
     limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
 });
 
+// Redirect root to frontend
+app.get('/', (req: Request, res: Response) => {
+    // Redirect to the frontend application
+    // This helps if Supabase redirects to backend (3000) by mistake
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    res.redirect(frontendUrl);
+});
+
 // Health check endpoint
 app.get('/health', (req: Request, res: Response) => {
     res.json({ status: 'ok', message: 'Server is running' });
@@ -68,6 +76,31 @@ app.delete('/api/sessions/:id', async (req: Request, res: Response) => {
     }
 });
 
+// Rename a session
+app.put('/api/sessions/:id', async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { title } = req.body;
+
+        if (!title) {
+            return res.status(400).json({ error: 'Title is required' });
+        }
+
+        const { error } = await supabase
+            .from('sessions')
+            .update({ title })
+            .eq('id', id);
+
+        if (error) throw error;
+
+        console.log('✏️ Session renamed:', id, title);
+        res.json({ message: 'Session renamed successfully' });
+    } catch (error) {
+        console.error('❌ Error renaming session:', error);
+        res.status(500).json({ error: 'Failed to rename session' });
+    }
+});
+
 // Get messages for a session
 app.get('/api/sessions/:id', async (req: Request, res: Response) => {
     try {
@@ -113,7 +146,7 @@ app.post('/api/chat', upload.single('file'), async (req: Request, res: Response)
         const file = req.file;
 
         // Default n8n webhook URL
-        const webhookUrl = apiUrl || 'https://schemeless-charli-unenlightenedly.ngrok-free.dev/webhook/bc3934df-8d10-48df-9960-f0db1e806328';
+        const webhookUrl = apiUrl || 'https://webhook.ryuma-ai.cloud/webhook/bc3934df-8d10-48df-9960-f0db1e806328';
 
         console.log('📨 Incoming request:', { message, hasFile: !!file, userName, sessionId, userId });
 
@@ -317,5 +350,5 @@ app.post('/api/chat', upload.single('file'), async (req: Request, res: Response)
 app.listen(PORT, () => {
     console.log(`🚀 Server is running on http://localhost:${PORT}`);
     console.log(`📡 Chat endpoint: http://localhost:${PORT}/api/chat`);
-    console.log(`🔗 n8n webhook: https://schemeless-charli-unenlightenedly.ngrok-free.dev/webhook/bc3934df-8d10-48df-9960-f0db1e806328`);
+    console.log(`🔗 n8n webhook: https://webhook.ryuma-ai.cloud/webhook/bc3934df-8d10-48df-9960-f0db1e806328`);
 });

@@ -6,4 +6,6 @@ ingress:
     service: http://localhost:5678
   - hostname: webhook.ryuma-ai.cloud
     service: http://localhost:5678
+  - hostname: ryuma-ai.cloud
+    service: http://localhost:5173
   - service: http_status:404

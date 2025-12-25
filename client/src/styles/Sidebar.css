@@ -1,5 +1,4 @@
 /* Sidebar Styles */
-@import './SidebarDelete.css';
 
 .sidebar {
     width: 260px;
@@ -69,6 +68,8 @@
     color: var(--text-primary);
     text-decoration: none;
     border: 1px solid transparent;
+    position: relative;
+    /* Ensure actions align right */
 }
 
 .session-item:hover {
@@ -77,7 +78,6 @@
 
 .session-item.active {
     background: var(--bg-tertiary);
-    /* Or a highlight color */
     border-color: var(--border-color);
 }
 
@@ -85,6 +85,7 @@
     color: var(--text-secondary);
     display: flex;
     align-items: center;
+    flex-shrink: 0;
 }
 
 .session-title {
@@ -93,25 +94,42 @@
     overflow: hidden;
     text-overflow: ellipsis;
     flex: 1;
+    min-width: 0;
+    /* Critical for ellipsis to work in flex */
+    margin-right: 4px;
+}
+
+.session-actions {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex-shrink: 0;
+    /* Visible by default (for mobile/touch) */
+    opacity: 1;
+    transition: opacity 0.2s ease;
+    padding-left: 8px;
+    /* Always keep spacing */
+}
+
+/* Only hide on devices that support hover (Desktop) */
+@media (hover: hover) {
+    .session-actions {
+        opacity: 0;
+        padding-left: 0;
+        /* No padding when hidden */
+    }
+
+    .session-item:hover .session-actions,
+    .session-item.active .session-actions {
+        opacity: 1;
+        padding-left: 8px;
+    }
 }
 
 .sidebar-footer {
     padding: 16px;
     border-top: 1px solid var(--border-color);
 }
-
-.user-profile {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 8px;
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-}
-
-/* Night Mode adjustments if keeping in separate file, 
-   but since App.css handles variables, this should just work 
-   if we use the vars. */
 
 .sign-out-btn {
     width: 100%;
@@ -129,12 +147,77 @@
     transition: all var(--transition-fast);
 }
 
+.mobile-close-btn {
+    display: none;
+    /* Desktop default */
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: transparent;
+    border: none;
+    padding: 8px;
+    color: var(--text-primary);
+    cursor: pointer;
+    z-index: 101;
+}
+
+@media (max-width: 768px) {
+    .mobile-close-btn {
+        display: block;
+    }
+}
+
 .sign-out-btn:hover {
     background: rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
+}
+
+.session-action-btn {
+    opacity: 0.6;
+    background: transparent;
+    /* Force transparent */
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.session-action-btn:hover {
+    opacity: 1;
+    background-color: rgba(255, 255, 255, 0.1);
+    /* Subtle hover only */
     color: var(--text-primary);
 }
 
 .sign-out-btn svg {
     width: 18px;
     height: 18px;
+}
+
+/* Mobile Responsive Sidebar - Force Override */
+@media (max-width: 768px) {
+    .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        height: 100%;
+        width: 280px;
+        z-index: 1000;
+        transform: translateX(-100%);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 2px 0 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .sidebar.mobile-open {
+        transform: translateX(0);
+    }
+
+    .mobile-close-btn {
+        display: block;
+    }
 }

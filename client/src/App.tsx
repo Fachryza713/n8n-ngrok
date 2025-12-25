@@ -10,7 +10,7 @@ import { supabase } from './supabase';
 import type { Message, Config, ConversationMessage, ChatResponse } from './types/types';
 import './styles/App.css';
 
-const API_BASE_URL = 'http://localhost:3000';
+const API_BASE_URL = '';
 
 function App() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -18,8 +18,10 @@ function App() {
   const [isTyping, setIsTyping] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isNightMode, setIsNightMode] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false); // New State
+  const [isGuestMode, setIsGuestMode] = useState(false); // Guest Mode State
   const [config, setConfig] = useState<Config>({
-    apiUrl: 'https://schemeless-charli-unenlightenedly.ngrok-free.dev/webhook/bc3934df-8d10-48df-9960-f0db1e806328',
+    apiUrl: 'https://webhook.ryuma-ai.cloud/webhook/bc3934df-8d10-48df-9960-f0db1e806328',
     temperature: 0.7,
     userName: 'User',
   });
@@ -51,6 +53,12 @@ function App() {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
+
+      // Clean up URL hash (remove #) after login
+      if (session?.user && window.location.hash) {
+        window.history.replaceState(null, '', window.location.pathname + window.location.search);
+      }
+
       if (session?.user) {
         // Prioritize localStorage name if exists, otherwise use session name
         const savedUserName = localStorage.getItem('userName');
@@ -86,8 +94,6 @@ function App() {
     if (savedNightMode === 'true') {
       setIsNightMode(true);
     }
-
-    // Load sessions on mount is handled by auth effect now
   }, []);
 
   const fetchSessions = async (userId: string) => {
@@ -168,24 +174,15 @@ function App() {
       const response = await fetch(`${API_BASE_URL}/api/sessions/${sessionId}`);
       if (response.ok) {
         const data = await response.json();
-        // Transform stored messages if needed to match UI Message type
-        // Assuming data comes in a format we can map or use directly
-        // If data structure is complex, might need mapping logic here
         if (Array.isArray(data)) {
-          // Basic mapping - adjust based on actual DB structure
           const mappedMessages: Message[] = data.map((msg: any) => ({
             id: msg.id || Date.now().toString(),
             text: typeof msg.message === 'string' ? msg.message : JSON.stringify(msg.message),
-            isUser: msg.role === 'human' || msg.type === 'human', // Adjust based on LangChain schema
+            isUser: msg.role === 'human' || msg.type === 'human',
             timestamp: new Date(msg.created_at || Date.now()),
-            imageUrl: msg.image_url, // Map URL
+            imageUrl: msg.image_url,
           }));
           setMessages(mappedMessages);
-
-          // For now, if we don't know the schema, we might not show old messages correctly
-          // unless we verify the structure.
-          // Placeholder:
-          // showNotification('History loaded (schema adaptation required)');
         }
       }
     } catch (error) {
@@ -193,6 +190,28 @@ function App() {
       showNotification('Gagal memuat riwayat chat');
     } finally {
       setIsLoadingSessions(false);
+    }
+  };
+
+  const handleRenameSession = async (sessionId: string, newTitle: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/sessions/${sessionId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ title: newTitle }),
+      });
+
+      if (response.ok) {
+        setSessions(prev =>
+          prev.map(s => (s.id === sessionId ? { ...s, title: newTitle } : s))
+        );
+        showNotification('Chat renamed');
+      }
+    } catch (error) {
+      console.error('Failed to rename session:', error);
+      showNotification('Failed to rename chat');
     }
   };
 
@@ -217,21 +236,19 @@ function App() {
   const handleSendMessage = async (messageText: string, file: File | null) => {
     if (!messageText.trim() && !file) return;
 
-    // Generate Session ID if new
     let activeSessionId = currentSessionId;
     if (!activeSessionId) {
       activeSessionId = crypto.randomUUID();
       setCurrentSessionId(activeSessionId);
     }
 
-    // Add user message
-    if (messageText || file) { // Allow empty text if file exists
+    if (messageText || file) {
       const userMessage: Message = {
         id: Date.now().toString(),
         text: messageText,
         isUser: true,
         timestamp: new Date(),
-        imageUrl: file ? URL.createObjectURL(file) : undefined, // Preview image
+        imageUrl: file ? URL.createObjectURL(file) : undefined,
       };
       setMessages(prev => [...prev, userMessage]);
 
@@ -251,7 +268,7 @@ function App() {
       formData.append('history', JSON.stringify(conversationHistory));
       formData.append('apiUrl', config.apiUrl);
       formData.append('userName', config.userName);
-      formData.append('sessionId', activeSessionId); // Pass session ID
+      formData.append('sessionId', activeSessionId);
       if (user?.id) {
         formData.append('userId', user.id);
       }
@@ -286,8 +303,6 @@ function App() {
       };
       setConversationHistory(prev => [...prev, aiConversation]);
 
-      // Refresh session list to show new chat title
-      // Refresh session list to show new chat title
       if (!currentSessionId && user?.id) {
         fetchSessions(user.id);
       }
@@ -314,7 +329,10 @@ function App() {
   };
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
+    if (user) {
+      await supabase.auth.signOut();
+    }
+    setIsGuestMode(false); // Reset guest mode
     setMessages([]);
     setConversationHistory([]);
     setCurrentSessionId(null);
@@ -324,26 +342,54 @@ function App() {
     return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#1a1a1a', color: 'white' }}>Loading...</div>;
   }
 
-  if (!user) {
-    return <Login />;
+  if (!user && !isGuestMode) {
+    return <Login onGuestLogin={() => setIsGuestMode(true)} />;
   }
 
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
+      {/* Mobile Overlay */}
+      {isMobileSidebarOpen && (
+        <div
+          className="sidebar-overlay"
+          onClick={() => setIsMobileSidebarOpen(false)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            background: 'rgba(0, 0, 0, 0.5)',
+            zIndex: 999,
+            backdropFilter: 'blur(2px)' // Optional: blur effect
+          }}
+        />
+      )}
+
       <Sidebar
         sessions={sessions}
         currentSessionId={currentSessionId}
-        onSessionSelect={handleSessionSelect}
-        onNewChat={handleNewChat}
+        onSessionSelect={(id) => {
+          handleSessionSelect(id);
+          setIsMobileSidebarOpen(false); // Close on select
+        }}
+        onNewChat={() => {
+          handleNewChat();
+          setIsMobileSidebarOpen(false); // Close on new chat
+        }}
         onSignOut={handleSignOut}
         onDeleteSession={handleDeleteSession}
+        onRenameSession={handleRenameSession}
         isLoading={isLoadingSessions}
+        isOpen={isMobileSidebarOpen}
+        onClose={() => setIsMobileSidebarOpen(false)}
       />
       <div className="container" style={{ flex: 1, height: '100%', maxWidth: 'none', margin: 0 }}>
         <Header
           onSettingsClick={() => setIsSettingsOpen(true)}
           onNightModeToggle={handleNightModeToggle}
           isNightMode={isNightMode}
+          onMenuClick={() => setIsMobileSidebarOpen(true)}
         />
         <ChatMessages messages={messages} />
         <TypingIndicator show={isTyping} />
