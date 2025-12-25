@@ -52,7 +52,9 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({ messages }) => {
                                     />
                                 </div>
                             )}
-                            <div className="message-text">{message.text}</div>
+                            <div className="message-text" style={{ whiteSpace: 'pre-wrap' }}>
+                                {message.text.replace(/\*\*/g, '')}
+                            </div>
                             <span className="message-time">{formatTime(message.timestamp)}</span>
                         </div>
                     </div>
