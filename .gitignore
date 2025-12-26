@@ -30,3 +30,5 @@ yarn-error.log*
 .vscode/
 .idea/
 n8n_data/
+
+n8n_data/

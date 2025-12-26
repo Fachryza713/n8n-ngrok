@@ -146,7 +146,13 @@ app.post('/api/chat', upload.single('file'), async (req: Request, res: Response)
         const file = req.file;
 
         // Default n8n webhook URL
-        const webhookUrl = apiUrl || 'https://webhook.ryuma-ai.cloud/webhook/bc3934df-8d10-48df-9960-f0db1e806328';
+        let webhookUrl = apiUrl || 'http://localhost:5678/webhook/bc3934df-8d10-48df-9960-f0db1e806328';
+
+        // Optimization: Use localhost if targeting the local domain to avoid Cloudflare loopback issues
+        if (webhookUrl.includes('webhook.ryuma-ai.cloud')) {
+            webhookUrl = webhookUrl.replace('https://webhook.ryuma-ai.cloud', 'http://localhost:5678');
+            console.log('🔄 Optimized webhook URL to localhost:', webhookUrl);
+        }
 
         console.log('📨 Incoming request:', { message, hasFile: !!file, userName, sessionId, userId });
 

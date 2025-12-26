@@ -8,10 +8,10 @@ services:
     ports:
       - "5678:5678"
     environment:
-      - N8N_HOST=schemeless-charli-unenlightenedly.ngrok-free.dev
+      - N8N_HOST=n8n.ryuma-ai.cloud
       - N8N_PORT=5678
       - N8N_PROTOCOL=https
-      - WEBHOOK_URL=https://schemeless-charli-unenlightenedly.ngrok-free.dev/
+      - WEBHOOK_URL=https://webhook.ryuma-ai.cloud/
       - GENERIC_TIMEZONE=Asia/Jakarta
     volumes:
       - ./n8n_data:/home/node/.n8n
