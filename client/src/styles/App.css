@@ -838,8 +838,17 @@ textarea::placeholder {
     transform: translateY(0);
 }
 
+/* Mobile Menu Button - Hidden on Desktop */
+.mobile-menu-btn {
+    display: none;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
+    .mobile-menu-btn {
+        display: block;
+    }
+
     .container {
         padding: 10px;
     }
